@@ -1773,7 +1773,7 @@ function renderResults(){
   };
   document.getElementById('btnCert').onclick = downloadCertificate;
   updateSendStatus();
-  if (F.sent === 'pending' || F.sent === 'error' || F.sent === 'sending') sendResults();
+  if (F.sent === 'pending' || F.sent === 'sending') sendResults();
 }
 
 
@@ -1876,10 +1876,14 @@ async function sendResults(){
       };
       const r = await fetch('https://formsubmit.co/ajax/' + cfg.destino, { method:'POST', headers:{ 'Content-Type':'application/json', 'Accept':'application/json' }, body:JSON.stringify(fields) });
       const j = await r.json().catch(() => ({}));
-      if (!r.ok || j.success === false || j.success === 'false') throw new Error(j.message || 'error');
+      if (!r.ok || j.success === false || j.success === 'false') {
+        const err = new Error(j.message || ('HTTP ' + r.status));
+        if (/activ/i.test(j.message || '')) err.activation = true;   // primer envío: FormSubmit pide activar el correo
+        throw err;
+      }
     }
     F.sent = 'ok'; F.sentAt = new Date().toISOString();
-  } catch (e) { F.sent = 'error'; }
+  } catch (e) { F.sent = e.activation ? 'activation' : 'error'; F.sendError = String(e.message || e).slice(0, 200); }
   sending = false; saveState(); updateSendStatus();
 }
 function updateSendStatus(){
@@ -1889,7 +1893,8 @@ function updateSendStatus(){
     ok:       `<span class="ss ok">${ICON.checkC} Resultado enviado a Tesorería · ${fmtDate(F.sentAt)}</span>`,
     sending:  `<span class="ss">${ICON.send} Enviando resultado a Tesorería…</span>`,
     pending:  `<span class="ss">${ICON.send} Enviando resultado a Tesorería…</span>`,
-    error:    `<span class="ss bad">${ICON.x} No se pudo enviar el resultado (revisa tu conexión).</span><button class="btn btn-ghost" id="btnResend">${ICON.send} Reintentar envío</button>`,
+    activation: `<span class="ss bad">${ICON.mail} El correo de Tesorería aún no está activado. Se envió un mensaje de activación a ${escapeHTML(CONFIG.envio.destino)}: ábrelo, pulsa “Activate Form” y luego vuelve aquí y pulsa “Reintentar envío”.</span><button class="btn btn-ghost" id="btnResend">${ICON.send} Reintentar envío</button>`,
+    error:    `<span class="ss bad">${ICON.x} No se pudo enviar el resultado. ${F.sendError ? `<small style="font-weight:600">(${escapeHTML(F.sendError)})</small>` : 'Revisa tu conexión.'}</span><button class="btn btn-ghost" id="btnResend">${ICON.send} Reintentar envío</button>`,
     noconfig: `<span class="ss bad">${ICON.info} El envío por correo aún no está configurado. Tu resultado quedó guardado en este equipo; informa a Tesorería.</span>`,
   };
   el.innerHTML = map[F.sent] || '';
