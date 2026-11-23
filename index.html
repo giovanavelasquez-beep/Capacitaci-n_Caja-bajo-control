@@ -628,6 +628,8 @@ main{ padding:36px clamp(18px,4vw,56px) 70px; min-width:0; }
 }
 @media (max-width:680px){ .ig-tiles.c2,.ig-tiles.c3,.ig-offices{ grid-template-columns:1fr; } .ig-tiles.c1 .ig-tile{ flex-direction:column; } }
 
+.review-banner{ display:flex; align-items:center; gap:12px; margin:20px 0 0; padding:14px 18px; border-radius:16px; background:#e3f3fc; color:#0b4f7a; font-size:.95rem; border:1px solid #bfe2f6; }
+.review-banner svg{ width:22px; height:22px; flex-shrink:0; }
 /* =========================================================================
    8. ADAPTABILIDAD (portátiles, tabletas, celulares y proyección)
    ========================================================================= */
@@ -735,18 +737,17 @@ const CONFIG = {
   cargoAutora: 'Tesorera',
 
   /* ENVÍO DE RESULTADOS -----------------------------------------------
-     metodo: 'formsubmit' → servicio gratuito, solo requiere el correo.
-                            El PRIMER envío llega como correo de activación:
-                            ábrelo y confirma; desde ahí llegan los resultados.
-             'appsscript' → Google Apps Script (guarda en Google Sheets y
-                            envía correo). Requiere publicar el script incluido
-                            y pegar su URL en "url".
-     destino: correo que recibe los resultados (para 'formsubmit').
-     url:     URL de la aplicación web de Apps Script (para 'appsscript').  */
+     metodo: 'powerautomate' → flujo de Power Automate (Microsoft 365) con el
+                               disparador "Cuando se recibe una solicitud HTTP".
+                               Guarda en Excel (OneDrive) y envía correo por Outlook.
+                               Pega en "url" la dirección HTTP POST del flujo.
+             'formsubmit'    → servicio externo gratuito (usa "destino").
+             'appsscript'    → Google Apps Script (usa "url").
+     destino: correo que recibe los resultados (solo para 'formsubmit').    */
   envio: {
-    metodo: 'formsubmit',
-    destino: 'tesoreria@febor.coop',   // correo que recibe los resultados
-    url: '',
+    metodo: 'powerautomate',
+    destino: 'tesoreria@febor.coop',
+    url: 'https://default3ec1f0d909b64bac88731c4e589383.85.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/18/workflows/9a53953cbf4e4b88b9b15de45ff620c8/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=GlqanbD1zehqNritZHeHwcchMjJFSb1eaEwP7AoqTaw',   // URL "HTTP POST" del flujo de Power Automate
   },
 
   /* Reinicio administrativo (para pruebas): abrir la plataforma con
@@ -988,14 +989,14 @@ const MODULES = [
         { i:'stamp', k:'Radicación', t:'Radicación de recibos.' },
       ]) },
     { title: 'Recepción de efectivo', html: igTiles([
-        { i:'cash', k:'Contar frente al cliente', t:'Contar el dinero en presencia del cliente antes de finalizar la transacción y confirmar el monto con el mismo.' },
+        { i:'cash', k:'Contar frente al asociado', t:'Contar el dinero en presencia del asociado antes de finalizar la transacción y confirmar el monto con el mismo.' },
         { i:'receipt', k:'Registrar y emitir comprobante', t:'Registrar la transacción en el sistema y emitir el comprobante correspondiente.' },
         { i:'eyeoff', k:'Cero distracciones', t:'Evitar distracciones durante el conteo del dinero para reducir errores.' },
         { i:'alert', k:'Reportar irregularidades', t:'Reportar inmediatamente cualquier irregularidad en la recepción del dinero.' },
-      ]) + EXTRA('Organizar los billetes por denominación antes de contarlos facilita el conteo y la confirmación del monto con el cliente.') },
+      ]) + EXTRA('Organizar los billetes por denominación antes de contarlos facilita el conteo y la confirmación del monto con el asociado.') },
     { title: 'Entrega de efectivo', html: igFlow([
         { i:'user', k:'Verificar identidad', t:'Verificar la identidad del receptor antes de la entrega del efectivo mediante documentos de identificación válidos.' },
-        { i:'cash', k:'Contar y confirmar', t:'Contar el dinero antes de entregarlo y obtener confirmación del cliente para evitar discrepancias.' },
+        { i:'cash', k:'Contar y confirmar', t:'Contar el dinero antes de entregarlo y obtener confirmación del asociado para evitar discrepancias.' },
         { i:'receipt', k:'Registrar y entregar recibo', t:'Registrar toda transacción en el sistema y entregar un recibo detallado de la operación.' },
       ]) },
   ]
@@ -1045,7 +1046,7 @@ const MODULES = [
     { title: 'Faltantes o sobrantes', html:
         igStats([
           { i:'clock', v:'De inmediato', l:'Informar cualquier sobrante o faltante' },
-          { i:'alert', v:'Más de $10.000', l:'Se considera grave' },
+          { i:'users', v:'4 cargos', l:'Se informa siempre, sin importar el monto' },
           { i:'shield', v:'≥ ½ SMMLV', l:'Faltante no identificado ni subsanado: investigación disciplinaria' },
         ])
       + igTimeline([
@@ -1053,11 +1054,10 @@ const MODULES = [
           { i:'users', k:'¿A quién informar?', t:'Independiente del monto del sobrante o faltante se deberá informar al Gerente, director del Servicio al Asociado, Tesorero y jefe Control Interno y Calidad, sobre los faltantes o sobrantes. Desde tesorería se debe dejar la trazabilidad del incidente ocurrido.',
             extra:`<div class="ig-roles">${['Gerente','Director del Servicio al Asociado','Tesorero','Jefe Control Interno y Calidad'].map(r => `<span>${ICON.user}${r}</span>`).join('')}</div>` },
           { i:'coins', k:'Cubrir o consignar', t:'El funcionario responsable del manejo operativo de la caja deberá cubrir de inmediato el faltante detectado o consignar el sobrante previa notificación a tesorería. Ello no exime para que se deje constancia siempre de la situación encontrada y cubrimiento del faltante.' },
-          { i:'alert', k:'Gravedad', t:'Se considera grave cualquier sobrante o faltante que supere los $10.000.' },
         ]) },
     { title: 'Reportar a tiempo', html: `
         <div class="big-msg">${ICON.alert}<span>¡Reportar a tiempo también es proteger la operación!</span></div>`
-      + igLead('El mensaje que queremos transmitir es que cualquier falla tecnológica, física o de infraestructura que pueda afectar el funcionamiento de las cajas debe ser informada oportunamente a Tesorería.')
+      + igLead('Cualquier falla tecnológica, física o de infraestructura que pueda afectar el funcionamiento de las cajas debe ser informada oportunamente a Tesorería.')
       + `<h3 class="ig-h3">¿Qué situaciones debes reportar?</h3>`
       + igTiles([
           { i:'monitor', k:'1. Herramientas de software', list:['Fallas en el sistema de gestión documental.','Problemas en el aplicativo de operaciones.','Errores al registrar o consultar transacciones.','Dificultades para generar comprobantes o reportes.'] },
@@ -1163,8 +1163,8 @@ const MODULES = [
           { i:'mail', k:'Correo', t:'Envíe correo a tesoría@febor.coop con copia a Gestión Documental.' },
           { i:'truck', k:'Tramitador', t:'Los documentos se enviarán con el tramitador de Febor Entidad Cooperativa.' },
         ])
-      + `<div class="ig-remember warn"><span class="ig-ti">${ICON.alert}</span><p>No se recibirá documentación que no cumpla con las condiciones de</p></div>`
-      + NOTA('En el documento fuente esta frase termina incompleta (“…que no cumpla con las condiciones de”) y se conserva tal cual. La dirección de correo se transcribe exactamente como aparece; confirme con Tesorería la dirección vigente.') },
+      + `<div class="ig-remember warn"><span class="ig-ti">${ICON.alert}</span><p>No se recibirá documentación que no cumpla con las condiciones aquí descritas.</p></div>`
+ },
   ]
 },
 ];
@@ -1186,9 +1186,9 @@ const BANK = [
   { m:'m1', type:'mc', kind:'Simulación', q:'Al cierre del día, tu conteo de efectivo no coincide con el registro del sistema. ¿Qué se debe hacer?',
     opts:['Reportar la diferencia de inmediato','Esperar a la apertura del día siguiente para volver a contar','Ajustar el registro del sistema para que coincida','Firmar el reporte de cierre y anotar la diferencia la próxima semana'],
     exp:'En apertura y cierre, el procedimiento establece reportar cualquier diferencia detectada de inmediato.', src:'Control de caja › Apertura y cierre' },
-  { m:'m1', type:'mc', kind:'Pregunta', q:'Al recibir efectivo de un cliente, ¿cuándo se debe contar el dinero?',
-    opts:['En presencia del cliente, antes de finalizar la transacción, confirmando el monto con él','Después de que el cliente se retira, para evitar demoras','Al final de la jornada, durante el arqueo','Solo si el monto supera $10.000.000'],
-    exp:'El procedimiento indica contar el dinero en presencia del cliente antes de finalizar la transacción y confirmar el monto con el mismo.', src:'Control de caja › Recepción de efectivo' },
+  { m:'m1', type:'mc', kind:'Pregunta', q:'Al recibir efectivo de un asociado, ¿cuándo se debe contar el dinero?',
+    opts:['En presencia del asociado, antes de finalizar la transacción, confirmando el monto con él','Después de que el asociado se retira, para evitar demoras','Al final de la jornada, durante el arqueo','Solo si el monto supera $10.000.000'],
+    exp:'El procedimiento indica contar el dinero en presencia del asociado antes de finalizar la transacción y confirmar el monto con el mismo.', src:'Control de caja › Recepción de efectivo' },
   { m:'m1', type:'tf', kind:'Pregunta', q:'Antes de entregar efectivo, se debe verificar la identidad del receptor mediante documentos de identificación válidos.',
     ans:true, exp:'Es el primer lineamiento de la sección Entrega de efectivo.', src:'Control de caja › Entrega de efectivo' },
   { m:'m1', type:'mc', kind:'Caso práctico', q:'Terminas de entregar un retiro en efectivo a un asociado. ¿Qué debe acompañar la operación?',
@@ -1226,17 +1226,14 @@ const BANK = [
     ans:false, exp:'Primero se realiza el registro en el sistema con la operación 0207 Cajero – Banco; una vez hecho, el cheque físico se envía a consignar.', src:'Operaciones especiales › Consignación de cheques' },
 
   /* ---- Módulo 3: Alertas de caja ---- */
-  { m:'m3', type:'mc', kind:'Pregunta', q:'¿A partir de qué monto se considera grave un sobrante o faltante?',
-    opts:['Cualquiera que supere los $10.000','Cualquiera que supere los $100.000','Solo los que superen $10.000.000','Solo los que igualen un salario mínimo'],
-    exp:'El procedimiento indica: se considera grave cualquier sobrante o faltante que supere los $10.000.', src:'Alertas de caja › Faltantes o sobrantes' },
   { m:'m3', type:'mc', kind:'Pregunta', q:'Independiente del monto, ¿a quiénes se debe informar un faltante o sobrante?',
     opts:['Gerente, director del Servicio al Asociado, Tesorero y jefe de Control Interno y Calidad','Solo al Tesorero','Solo al jefe inmediato','Al área de Gestión Documental'],
     exp:'El procedimiento enumera a esos cuatro cargos; además, desde tesorería se deja la trazabilidad del incidente.', src:'Alertas de caja › Faltantes o sobrantes' },
-  { m:'m3', type:'mc', kind:'Simulación', q:'Al hacer el arqueo detectas un faltante de $25.000. ¿Cuál es la actuación correcta?',
+  { m:'m3', type:'mc', kind:'Simulación', q:'Al hacer el arqueo detectas un faltante de $25.000 en tu caja. ¿Cuál es la actuación correcta?',
     opts:['Informar inmediatamente, cubrir de inmediato el faltante y dejar constancia de la situación','Cubrirlo con dinero propio y no informar, porque es un monto bajo','Esperar al día siguiente por si aparece','Registrar la diferencia como sobrante del día siguiente'],
-    exp:'Se debe informar inmediatamente (para verificar cámaras), el responsable cubre de inmediato el faltante y siempre se deja constancia. Además, al superar $10.000 se considera grave.', src:'Alertas de caja › Faltantes o sobrantes' },
+    exp:'Se debe informar inmediatamente (para verificar cámaras), el responsable cubre de inmediato el faltante y siempre se deja constancia.', src:'Alertas de caja › Faltantes o sobrantes' },
   { m:'m3', type:'mc', kind:'Caso práctico', q:'Al cierre tienes un sobrante. ¿Qué se debe hacer con ese dinero?',
-    opts:['Consignar el sobrante previa notificación a tesorería y dejar constancia','Guardarlo en la caja para compensar futuros faltantes','Entregarlo al primer cliente que reclame','Repartirlo entre los cajeros de la oficina'],
+    opts:['Consignar el sobrante previa notificación a tesorería y dejar constancia','Guardarlo en la caja para compensar futuros faltantes','Entregarlo al primer asociado que reclame','Repartirlo entre los cajeros de la oficina'],
     exp:'El funcionario responsable debe consignar el sobrante previa notificación a tesorería; siempre se deja constancia de la situación.', src:'Alertas de caja › Faltantes o sobrantes' },
   { m:'m3', type:'mc', kind:'Caso práctico', q:'El escáner de la oficina no permite digitalizar los documentos del cierre. ¿Qué debes hacer?',
     opts:['Informarlo oportunamente a Tesorería, ya que es una falla de equipos que afecta el funcionamiento de la caja','Esperar a que se arregle solo','Enviar los documentos sin digitalizar y sin avisar','Reportarlo únicamente cuando termine el mes'],
@@ -1291,7 +1288,7 @@ const BANK = [
     opts:['Retirarlos: los documentos deben estar libres de ganchos, clips metálicos, grampas u otros materiales abrasivos','Dejarlos para que no se pierdan las hojas','Reemplazarlos por clips de colores','Grapar todo el cierre en un solo bloque'],
     exp:'El procedimiento exige documentos libres de ganchos, clips metálicos, grampas u otros materiales abrasivos para evitar su deterioro.', src:'Documentación › Organización física' },
   { m:'m6', type:'mc', kind:'Pregunta', q:'¿Cómo se organizan cronológicamente los documentos físicos del cierre?',
-    opts:['Primero los documentos de cuadre de caja (diarios), encima los recibos en bolsa pequeña, del más antiguo al más reciente','Primero los recibos y luego los cuadres, del más reciente al más antiguo','Por valor de la transacción, de mayor a menor','Por tipo de cliente'],
+    opts:['Primero los documentos de cuadre de caja (diarios), encima los recibos en bolsa pequeña, del más antiguo al más reciente','Primero los recibos y luego los cuadres, del más reciente al más antiguo','Por valor de la transacción, de mayor a menor','Por tipo de asociado'],
     exp:'Primero el cuadre de caja diario, encima los recibos en bolsa pequeña, repitiendo del más antiguo al más reciente.', src:'Documentación › Organización física' },
   { m:'m6', type:'mc', kind:'Pregunta', q:'Una vez organizados los documentos físicos, ¿qué sigue?',
     opts:['Diligenciar el formato de transferencia relacionando cada cierre con su radicado, enviar correo a Tesorería con copia a Gestión Documental y enviar los documentos con el tramitador','Entregarlos directamente al asociado','Destruir las copias físicas una vez escaneadas','Guardarlos en la caja de seguridad de la oficina'],
@@ -1323,7 +1320,7 @@ const allDone    = () => MODULES.every(m => STATE.done.includes(m.id));
 const visitedOf  = (id) => STATE.visited[id] || [];
 const currentModuleIdx = () => MODULES.findIndex((m, k) => !isDone(k));
 const quizStarted = () => !!(STATE.quiz || STATE.finished);   // al iniciar el reto, los módulos se cierran
-const canOpenModule = (i) => isUnlocked(i) && !quizStarted();
+const canOpenModule = (i) => isUnlocked(i) && !STATE.quiz;   // cerrados solo MIENTRAS el reto está en curso; al terminar, modo repaso
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleString('es-CO', { dateStyle:'medium', timeStyle:'short' }) : '—';
 
 /* ------------------------- F. VISTAS ------------------------- */
@@ -1341,7 +1338,7 @@ function renderChrome(active){
   document.getElementById('userChip').innerHTML = STATE.user ? `${ICON.user}<span class="lbl">${escapeHTML(STATE.user.nombre.split(' ')[0])}</span>` : '';
   document.getElementById('userChip').style.display = STATE.user ? '' : 'none';
 
-  const closed = quizStarted();
+  const closed = !!STATE.quiz;
   const link = (key, label, sub, ico, grad, locked, state, href) => `
     <button class="side-link ${active === key ? 'active' : ''} ${locked ? 'locked' : ''}" data-href="${href}" ${locked ? 'aria-disabled="true"' : ''}>
       <span class="side-ico" style="background:${grad}">${ico}</span>
@@ -1353,7 +1350,7 @@ function renderChrome(active){
     `<div class="side-title" style="margin-top:18px">Módulos</div>`;
   MODULES.forEach((m, i) => {
     const locked = !STATE.user || !canOpenModule(i);
-    const sub = closed ? (isDone(i) ? 'Revisado · cerrado' : 'Cerrado') : isDone(i) ? 'Revisado' : !isUnlocked(i) ? 'Bloqueado' : `${visitedOf(m.id).length}/${m.sections.length} secciones`;
+    const sub = closed ? (isDone(i) ? 'Revisado · cerrado' : 'Cerrado') : STATE.finished ? 'Repaso · solo lectura' : isDone(i) ? 'Revisado' : !isUnlocked(i) ? 'Bloqueado' : `${visitedOf(m.id).length}/${m.sections.length} secciones`;
     html += link(m.id, `${i + 1}. ${m.title}`, sub, ICON[m.icon], m.grad, locked, isDone(i) ? 'ok' : locked ? 'lock' : '', `#/modulo/${i + 1}`);
   });
   const retoSub = STATE.finished ? `Completado · ${STATE.finished.pct}%` : STATE.quiz ? 'En curso' : allDone() ? 'Habilitado' : 'Completa los 6 módulos';
@@ -1367,7 +1364,7 @@ function renderChrome(active){
   sb.innerHTML = html;
   sb.querySelectorAll('.side-link').forEach(b => b.addEventListener('click', () => {
     if (b.classList.contains('locked')) {
-      toast(ICON.lock + (!STATE.user ? ' Primero registra tus datos.' : closed ? ' Los módulos se cerraron al iniciar el reto final.' : ' Completa los módulos anteriores para habilitar esta opción.'));
+      toast(ICON.lock + (!STATE.user ? ' Primero registra tus datos.' : closed ? ' Los módulos están cerrados mientras presentas el reto final.' : ' Completa los módulos anteriores para habilitar esta opción.'));
       return;
     }
     closeSidebar(); go(b.dataset.href);
@@ -1421,7 +1418,7 @@ function renderRegister(){
 function renderDashboard(){
   renderChrome('home');
   const n = STATE.done.length, pct = Math.round(n / MODULES.length * 100), cur = currentModuleIdx();
-  const closed = quizStarted(), F = STATE.finished;
+  const closed = !!STATE.quiz, F = STATE.finished;
   const R = 40, C = 2 * Math.PI * R;
 
   // Tarjeta destacada según el momento del recorrido
@@ -1455,7 +1452,7 @@ function renderDashboard(){
     const status = done ? `<span class="r-status done">${ICON.check} COMPLETADO</span>`
       : locked ? `<span class="r-status">${ICON.lock} ${closed ? 'CERRADO' : 'BLOQUEADO'}</span>`
       : `<span class="r-status now">EN CURSO</span>`;
-    const cta = locked ? ICON.lock : (done ? 'Repasar ' : 'Ver módulo ') + ICON.arrowR;
+    const cta = locked ? ICON.lock : (done ? 'Repasar ' : 'Ver módulo ') + ICON.arrowR;  // tras el reto: repaso
     return `<button class="rcard ${locked ? 'locked' : ''} ${isCur ? 'current' : ''} ${closed && done ? 'closed-done' : ''}" style="--rc:${m.color}; animation-delay:${i * 70}ms" data-i="${i}" aria-label="Módulo ${i + 1}: ${m.title}${locked ? ' (no disponible)' : ''}">
         <div class="r-art" style="background:${m.grad}">${ILLU[m.id]}${status}</div><span class="r-num" style="color:${m.color}">${String(i + 1).padStart(2, '0')}</span>
         <div class="r-body"><h3>${m.title}</h3><p>${m.desc}</p>
@@ -1482,7 +1479,7 @@ function renderDashboard(){
             <defs><linearGradient id="dg"><stop offset="0" stop-color="#1ad5c4"/><stop offset="1" stop-color="#03a9ea"/></linearGradient></defs></svg><b>${pct}%</b></div>
           <div class="stat-list">
             <div><i style="background:var(--ok)"></i>${n} de ${MODULES.length} módulos completados</div>
-            <div><i style="background:#03a9ea"></i>${closed ? 'Módulos cerrados por inicio del reto' : cur >= 0 ? `En curso: ${MODULES[cur].title}` : 'Todos los módulos revisados'}</div>
+            <div><i style="background:#03a9ea"></i>${closed ? 'Módulos cerrados mientras presentas el reto' : F ? 'Módulos disponibles para repaso' : cur >= 0 ? `En curso: ${MODULES[cur].title}` : 'Todos los módulos revisados'}</div>
             <div><i style="background:#faa662"></i>Reto final ${F ? `completado · ${F.pct}%` : STATE.quiz ? 'en curso' : allDone() ? 'habilitado' : 'bloqueado'}</div>
           </div>
         </div>
@@ -1491,7 +1488,7 @@ function renderDashboard(){
       ${next}
     </section>
 
-    <div class="route-head"><div><h2>Ruta de aprendizaje</h2><p>${closed ? 'Los módulos se cerraron al iniciar el reto final.' : 'Cada módulo se habilita al completar el anterior.'}</p></div>
+    <div class="route-head"><div><h2>Ruta de aprendizaje</h2><p>${closed ? 'Los módulos están cerrados mientras presentas el reto final.' : F ? 'Reto presentado. Puedes repasar los módulos en modo solo lectura.' : 'Cada módulo se habilita al completar el anterior.'}</p></div>
       <span class="chip">${ICON.checkC} <b>${n}</b>/${MODULES.length} completados</span></div>
     <div class="route">${cards}</div>
 
@@ -1506,7 +1503,7 @@ function renderDashboard(){
 
   app.querySelectorAll('.rcard').forEach(c => c.addEventListener('click', () => {
     const i = +c.dataset.i;
-    if (closed) { toast(ICON.lock + ' Los módulos se cerraron al iniciar el reto final.'); return; }
+    if (closed) { toast(ICON.lock + ' Los módulos están cerrados mientras presentas el reto final.'); return; }
     if (!isUnlocked(i)) { toast(ICON.lock + ` Primero completa el módulo ${i}: ${MODULES[i - 1].title}.`); return; }
     go(`#/modulo/${i + 1}`);
   }));
@@ -1539,7 +1536,7 @@ function renderModule(i, s){
     : `<span class="mod-status">${ICON.info} Te ${pending === 1 ? 'falta' : 'faltan'} ${pending} ${pending === 1 ? 'sección' : 'secciones'} por consultar</span>`;
   let nextBtn;
   if (!last) nextBtn = `<button class="btn btn-primary" id="btnNext">Siguiente sección ${ICON.arrowR}</button>`;
-  else if (done) nextBtn = i < MODULES.length - 1 ? `<button class="btn btn-primary" id="btnGoNext">Ir al módulo ${i + 2} ${ICON.arrowR}</button>` : `<button class="btn btn-primary" id="btnGoReto">Ir al reto final ${ICON.trophy}</button>`;
+  else if (done) nextBtn = i < MODULES.length - 1 ? `<button class="btn btn-primary" id="btnGoNext">Ir al módulo ${i + 2} ${ICON.arrowR}</button>` : `<button class="btn btn-primary" id="btnGoReto">${STATE.finished ? 'Ver mis resultados' : 'Ir al reto final'} ${ICON.trophy}</button>`;
   else nextBtn = `<button class="btn btn-ok" id="btnMark" ${allSeen ? '' : 'disabled'}>${ICON.check} Marcar módulo como revisado</button>`;
   const sec = m.sections[s];
   const body = typeof sec.html === 'function' ? sec.html() : sec.html;
@@ -1551,6 +1548,7 @@ function renderModule(i, s){
         <div><p class="mcard-num" style="opacity:.85">MÓDULO ${i + 1} DE ${MODULES.length}</p><h1>${m.title}</h1><p>${m.desc}</p></div>
         <span class="banner-art">${ILLU[m.id]}</span></div>
     </section>
+    ${STATE.finished ? `<div class="review-banner">${ICON.book}<span><b>Modo repaso.</b> Ya presentaste el reto final (puntaje ${STATE.finished.pct}%). Puedes consultar el contenido; el reto no se puede repetir.</span></div>` : ''}
     <nav class="stepper" aria-label="Secciones del módulo">${chips}</nav>
     <article class="content-card ig">
       <h2>${sec.title}</h2><p class="kicker">Sección ${s + 1} de ${m.sections.length}</p>
@@ -1854,14 +1852,32 @@ function buildPayload(){
     navegador: navigator.userAgent,
   };
 }
+/* Resumen en HTML (tabla) para el cuerpo del correo de Power Automate */
+function buildHtmlSummary(d){
+  const e = (s) => escapeHTML(String(s)).replace(/\n/g, '<br>');
+  const row = (k, v, bold) => `<tr><td style="padding:7px 10px;background:#eef6f8;font-weight:bold;vertical-align:top;width:190px">${k}</td><td style="padding:7px 10px;${bold ? 'font-weight:bold;' : ''}">${e(v)}</td></tr>`;
+  return `<div style="font-family:Segoe UI,Arial,sans-serif;font-size:13px;color:#1c2620">
+<h2 style="color:#00826f;margin:0 0 6px">Caja bajo Control · Resultado del reto final</h2>
+<table style="border-collapse:collapse;border:1px solid #d6dee6" border="1" cellspacing="0">`
+    + row('Nombre completo', d.nombre, true) + row('Correo', d.correo) + row('Puntaje', d.puntaje, true) + row('Respuestas correctas', d.correctas)
+    + row('Alcanza la meta (' + d.meta + ')', d.alcanzaMeta) + row('Registro en la plataforma', d.registro) + row('Inicio del reto', d.inicioReto)
+    + row('Fin del reto', d.finReto) + row('Duración', d.duracion) + row('Resultado por módulo', d.porModulo) + row('Módulos revisados', d.modulos)
+    + row('Detalle de respuestas', d.respuestas) + row('ID del intento', d.id)
+    + `</table><p style="color:#7b8794;font-size:11px">Plataforma Caja bajo Control – FEBOR · Elaborado por ${CONFIG.autora}, ${CONFIG.cargoAutora}</p></div>`;
+}
 async function sendResults(){
   const F = STATE.finished, cfg = CONFIG.envio;
   if (!F || F.sent === 'ok' || sending) return;
-  if ((cfg.metodo === 'formsubmit' && !cfg.destino) || (cfg.metodo === 'appsscript' && !cfg.url)) { F.sent = 'noconfig'; saveState(); updateSendStatus(); return; }
+  if ((cfg.metodo === 'formsubmit' && !cfg.destino) || (cfg.metodo !== 'formsubmit' && !cfg.url)) { F.sent = 'noconfig'; saveState(); updateSendStatus(); return; }
   sending = true; F.sent = 'sending'; updateSendStatus();
   const d = buildPayload();
+  d.destino = cfg.destino; d.asunto = `Caja bajo Control · ${d.nombre} · ${d.puntaje}`; d.resumenHtml = buildHtmlSummary(d);
   try {
-    if (cfg.metodo === 'appsscript') {
+    if (cfg.metodo === 'powerautomate') {
+      /* Power Automate: JSON directo al disparador HTTP. Responde 200/202 si se recibió. */
+      const r = await fetch(cfg.url, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(d) });
+      if (!r.ok) throw new Error('Power Automate respondió HTTP ' + r.status);
+    } else if (cfg.metodo === 'appsscript') {
       const opts = { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body:JSON.stringify(d) };
       try { const r = await fetch(cfg.url, opts); if (!r.ok) throw new Error('http'); }
       catch (e) { await fetch(cfg.url, { ...opts, mode:'no-cors' }); }   // respaldo: envío sin lectura de respuesta
@@ -1991,7 +2007,7 @@ function route(){
   else if (parts[0] === 'modulo') {
     const i = parseInt(parts[1], 10) - 1, s = parts[2] ? parseInt(parts[2], 10) - 1 : 0;
     if (isNaN(i) || !MODULES[i]) { go('#/'); return; }
-    if (quizStarted()) { toast(ICON.lock + ' Los módulos se cerraron al iniciar el reto final.'); go('#/reto'); return; }
+    if (STATE.quiz) { toast(ICON.lock + ' Los módulos están cerrados mientras presentas el reto final.'); go('#/reto'); return; }
     if (!isUnlocked(i)) { toast(ICON.lock + ' Ese módulo aún está bloqueado.'); go('#/'); return; }
     renderModule(i, isNaN(s) ? 0 : s);
   } else if (parts[0] === 'reto') {
