@@ -962,7 +962,7 @@ const igStats = (items) => `<div class="ig-stats">${items.map(it => `
 const OFFICES = [
   { name: 'Mazurén',  base: 30, min: 10, max: 50,  line: 'Mazuren: Base: 30 millones, monto mínimo 10 millones máximo 50 millones' },
   { name: 'Centro',   base: 90, min: 50, max: 110, line: 'Centro: Base: 90 millones, monto mínimo 50 millones máximo 110 millones' },
-  { name: 'Calle 42', base: 30, min: 10, max: 50,  line: 'Calle 42: Base: 30 millones, monto mínimo 10 millones máximo 50 millone' },
+  { name: 'Calle 42', base: 30, min: 10, max: 50,  line: 'Calle 42: Base: 30 millones, monto mínimo 10 millones máximo 50 millones' },
 ];
 const igOffices = () => `<div class="ig-offices">${OFFICES.map(o => {
   const sc = (x) => (x / 120 * 100).toFixed(1) + '%';
@@ -1009,8 +1009,9 @@ const MODULES = [
     { title: 'Reversos', html: igTiles([
         { i:'swap', k:'¿Quién autoriza un reverso?', t:'En caso de presentarse una reversión de transacción la persona encargada por la dirección de servicio al asociado y/o de la extensión de caja es quien la autoriza esta acción.' },
         { i:'card', k:'Reverso con tarjeta de crédito', t:'En caso de que la reversión involucre una operación con tarjeta de crédito antes de realizarla se debe informar al área de operaciones y al asociado de las condiciones con las que se realizará puesto que al ser un producto no administrado por el Core se debe ingresar al aplicativo que maneja las tarjetas y crear una transacción adicional.' },
-        { i:'alert', k:'Reverso de pago total de un crédito', t:'En caso de necesitarse reversar una operación que generó el pago total de un crédito, esta solicitud debe ser gestionada directamente por el proceso de operaciones, dado que este tipo de casos puede generar la eliminación del crédito sin que esta sea la intención final de la transacción, posteriormente se informará a tesorería para que estos apliquen la transacción' },
-      ], 1) + NOTA('En el documento fuente, el último párrafo aparece partido: la frase “…operaciones, dado que este tipo de casos puede generar la eliminación del crédito…” quedó ubicada dentro de la sección de faltantes o sobrantes. Aquí se reubica en su sección original sin cambiar el texto.') },
+        { i:'alert', k:'Reverso de pago total de un crédito', t:'Cuando se requiera reversar una operación que haya generado el pago total de un crédito, la solicitud deberá gestionarse directamente con el área de Operaciones, teniendo en cuenta que, una vez aplicado el pago total, el crédito queda en estado inactivo. Por lo tanto, es necesario realizar previamente su reactivación para poder efectuar la reversión de la operación.' },
+      ], 1)
+      + `<div class="ig-remember warn"><span class="ig-ti">${ICON.clock}</span><p><b>Importante:</b> Los reversos deben realizarse el mismo día en que se ejecutó la transacción. Asimismo, la autorización correspondiente debe gestionarse de manera inmediata, en un tiempo máximo de 30 segundos, con el fin de evitar el bloqueo del proceso de reversión.</p></div>` },
     { title: 'Consignación de cheques', html:
         igStats([
           { i:'receipt', v:'Operación 0207', l:'Cajero – Banco: registro del cheque en taquilla' },
@@ -1027,13 +1028,14 @@ const MODULES = [
         igStats([
           { i:'cash', v:"$10'000.000", l:'Límite máximo establecido para retiros' },
           { i:'calendar', v:'1 día hábil', l:'Mínimo de anticipación de la solicitud' },
-          { i:'finger', v:'Certihuella o Evidente', l:'Validación de identidad del asociado' },
+          { i:'key', v:'Dirección Financiera y Tesorería', l:'Autorización previa y documentada' },
         ])
       + igLead('Cuando un asociado solicite retiros por valores superiores al límite máximo establecido ($10\'000.000), se aplicarán los siguientes controles y actividades:')
-      + igFlow([
+      + igTimeline([
           { i:'calendar', k:'Solicitud anticipada', t:'El asociado debe realizar la solicitud con mínimo un día hábil de anticipación, con el fin de que Tesorería pueda programar las provisiones necesarias sin comprometer la operación normal de la caja.' },
-          { i:'key', k:'Autorización', t:'La transacción debe ser autorizada por la Dirección antes de su ejecución. El cajero no podrá realizar el retiro sin contar con dicha autorización documentada.' },
-          { i:'finger', k:'Validación de identidad y soporte', t:'Se debe verificar la identidad del asociado mediante Certihuella o Evidente, y adjuntar al retiro el formato de Declaración de Responsabilidad por Retiro en Efectivo, mediante el cual el asociado asume responsabilidad por la custodia, transporte y manejo de los recursos, eximiendo a la Cooperativa de cualquier eventualidad posterior.' },
+          { i:'key', k:'Autorización', t:'La transacción deberá contar con la autorización previa de la Dirección Financiera y de Tesorería. En consecuencia, el cajero no podrá efectuar el retiro hasta disponer de la respectiva autorización documentada.' },
+          { i:'finger', k:'Validación de identidad y soporte', t:'Se deberá verificar la identidad del asociado mediante Certihuella o Evidente. Asimismo, como soporte de la operación, se deberá diligenciar y adjuntar el formato de <b>Declaración de Responsabilidad por Retiro en Efectivo</b>, mediante el cual el asociado asume la responsabilidad por la custodia, transporte y manejo de los recursos, eximiendo a la Cooperativa de cualquier eventualidad posterior.' },
+          { i:'doc', k:'Declaración de Origen de Fondos', t:'Adicionalmente, el asociado deberá diligenciar el formato de <b>Declaración de Origen de Fondos</b>, el cual deberá ser radicado ante el área de Riesgos.' },
         ])
       + `<div class="ig-remember"><span class="ig-ti">${ICON.mail}</span><p><b>Recuerda:</b> Las provisiones de efectivo deberán ser solicitadas al área de Tesorería mediante correo electrónico antes de las 3:00 p. m., con el fin de programar su entrega para el día hábil siguiente, de acuerdo con las denominaciones autorizadas.</p></div>` },
   ]
@@ -1046,14 +1048,15 @@ const MODULES = [
     { title: 'Faltantes o sobrantes', html:
         igStats([
           { i:'clock', v:'De inmediato', l:'Informar cualquier sobrante o faltante' },
-          { i:'users', v:'4 cargos', l:'Se informa siempre, sin importar el monto' },
+          { i:'alert', v:'Más de $10.000', l:'Se considera grave cualquier sobrante o faltante' },
           { i:'shield', v:'≥ ½ SMMLV', l:'Faltante no identificado ni subsanado: investigación disciplinaria' },
         ])
       + igTimeline([
-          { i:'camera', k:'Informar y verificar cámaras', t:'Cuando se presente sobrantes o faltantes de caja se <span class="mark">deberá informar inmediatamente</span> para verificar las cámaras de seguridad e identificar lo sucedido, en caso de no identificarse el error cometido y que este no sea subsanado de inmediato (si es un faltante), se considera falta grave y por lo tanto da lugar a investigación disciplinaria (sumas superiores o igual a medio salario mínimo mensual vigente).' },
+          { i:'camera', k:'Informar y verificar cámaras', t:'Cuando se presente sobrantes o faltantes de caja se <span class="mark">deberá informar inmediatamente</span> para verificar las cámaras de seguridad e identificar lo sucedido, en caso de no identificarse el error cometido y que este no sea subsanado de inmediato (si es un faltante), se considera falta grave y por lo tanto da lugar a investigación disciplinaria (sumas superiores o igual a medio salario mínimo mensual vigente). Se considera grave cualquier sobrante o faltante que supere los $10.000.' },
           { i:'users', k:'¿A quién informar?', t:'Independiente del monto del sobrante o faltante se deberá informar al Gerente, director del Servicio al Asociado, Tesorero y jefe Control Interno y Calidad, sobre los faltantes o sobrantes. Desde tesorería se debe dejar la trazabilidad del incidente ocurrido.',
             extra:`<div class="ig-roles">${['Gerente','Director del Servicio al Asociado','Tesorero','Jefe Control Interno y Calidad'].map(r => `<span>${ICON.user}${r}</span>`).join('')}</div>` },
-          { i:'coins', k:'Cubrir o consignar', t:'El funcionario responsable del manejo operativo de la caja deberá cubrir de inmediato el faltante detectado o consignar el sobrante previa notificación a tesorería. Ello no exime para que se deje constancia siempre de la situación encontrada y cubrimiento del faltante.' },
+          { i:'coins', k:'Registro de faltantes · transacción 0147', t:'En caso de faltante: Se deberá registrar la diferencia en el sistema mediante la transacción <b>0147 – Faltante de caja</b>. Una vez finalizada la investigación del caso y determinadas las causas de la diferencia, se establecerá el mecanismo correspondiente para su reconocimiento y cubrimiento.' },
+          { i:'cash', k:'Registro de sobrantes · transacción 0146', t:'En caso de sobrante: Se deberá registrar el valor identificado en el sistema mediante la transacción <b>0146 – Sobrante de caja</b>. Este valor quedará incorporado en los registros de la operación y hará parte del conteo y cuadre del cierre de caja.' },
         ]) },
     { title: 'Reportar a tiempo', html: `
         <div class="big-msg">${ICON.alert}<span>¡Reportar a tiempo también es proteger la operación!</span></div>`
@@ -1160,7 +1163,7 @@ const MODULES = [
       + EXTRA('Revisar el PDF página por página antes de adjuntarlo permite confirmar a la vez el orden de los documentos y que ninguna hoja esté cortada o girada.') },
     { title: 'Envío de documentos', html: igFlow([
           { i:'doc', k:'Formato de transferencia', t:'Una vez organizados los documentos físicos, diligencie el formato de transferencia relacionando cada cierre con su respectivo radicado.' },
-          { i:'mail', k:'Correo', t:'Envíe correo a tesoría@febor.coop con copia a Gestión Documental.' },
+          { i:'mail', k:'Correo', t:'Envíe correo a tesoreria@febor.coop con copia a Gestión Documental.' },
           { i:'truck', k:'Tramitador', t:'Los documentos se enviarán con el tramitador de Febor Entidad Cooperativa.' },
         ])
       + `<div class="ig-remember warn"><span class="ig-ti">${ICON.alert}</span><p>No se recibirá documentación que no cumpla con las condiciones aquí descritas.</p></div>`
@@ -1205,16 +1208,22 @@ const BANK = [
     opts:['Informar al área de operaciones y al asociado de las condiciones, porque se requiere una transacción adicional en el aplicativo de tarjetas','Realizarla directamente en el Core como cualquier otro reverso','Consignar el valor y luego informar a Tesorería','Esperar al cierre mensual para aplicarla'],
     exp:'La tarjeta de crédito no es administrada por el Core: se informa antes a operaciones y al asociado, y se crea una transacción adicional en el aplicativo de tarjetas.', src:'Operaciones especiales › Reversos' },
   { m:'m2', type:'mc', kind:'Caso práctico', q:'Un asociado pide reversar una operación que generó el pago total de su crédito. ¿Cómo se gestiona?',
-    opts:['Directamente por el proceso de operaciones; luego se informa a tesorería para que aplique la transacción','La reversa el cajero de inmediato en caja','La autoriza el asociado mediante declaración firmada','Se gestiona a través de la transportadora de valores'],
-    exp:'Este tipo de reverso puede eliminar el crédito sin que sea la intención; por eso lo gestiona el proceso de operaciones y después se informa a tesorería.', src:'Operaciones especiales › Reversos' },
+    opts:['Directamente con el área de Operaciones: como el crédito queda inactivo tras el pago total, primero debe reactivarse para poder reversar','La reversa el cajero de inmediato en caja, sin intervención de otras áreas','La autoriza el asociado mediante declaración firmada','Se gestiona a través de la transportadora de valores'],
+    exp:'Una vez aplicado el pago total, el crédito queda inactivo; por eso la solicitud se gestiona directamente con Operaciones y se requiere reactivar el crédito antes de reversar.', src:'Operaciones especiales › Reversos' },
+  { m:'m2', type:'mc', kind:'Pregunta', q:'¿Cuándo deben realizarse los reversos y en qué tiempo debe gestionarse su autorización?',
+    opts:['El mismo día de la transacción; la autorización de manera inmediata, en máximo 30 segundos','Dentro de los tres días hábiles siguientes; la autorización en máximo una hora','Al cierre del mes; la autorización cuando el área responsable lo programe','En cualquier momento; la autorización no tiene un tiempo definido'],
+    exp:'Los reversos deben realizarse el mismo día en que se ejecutó la transacción, y la autorización debe gestionarse de inmediato, en máximo 30 segundos, para evitar el bloqueo del proceso de reversión.', src:'Operaciones especiales › Reversos' },
   { m:'m2', type:'mc', kind:'Simulación', q:'Un asociado llega sin aviso previo y solicita retirar $15.000.000 en efectivo. ¿Qué corresponde?',
-    opts:['El retiro supera el límite: requiere solicitud con mínimo un día hábil de anticipación, autorización de la Dirección y validación de identidad con soporte','Pagarlo si hay efectivo suficiente en caja','Pagarlo en dos retiros de $7.500.000 el mismo día','Pagarlo y reportarlo a Tesorería al cierre'],
-    exp:'Para retiros superiores a $10\'000.000 se aplican: solicitud anticipada (mínimo un día hábil), autorización documentada de la Dirección y validación de identidad con el soporte correspondiente.', src:'Operaciones especiales › Retiros superiores al máximo' },
-  { m:'m2', type:'mc', kind:'Pregunta', q:'Para un retiro superior al máximo, ¿con qué se valida la identidad del asociado y qué formato se adjunta?',
-    opts:['Certihuella o Evidente, y el formato de Declaración de Responsabilidad por Retiro en Efectivo','Solo la cédula y el comprobante de caja','Una carta firmada por el asociado','El formato de transferencia documental'],
-    exp:'El procedimiento exige verificar identidad mediante Certihuella o Evidente y adjuntar la Declaración de Responsabilidad por Retiro en Efectivo.', src:'Operaciones especiales › Retiros superiores al máximo' },
-  { m:'m2', type:'tf', kind:'Pregunta', q:'El cajero puede realizar un retiro superior al máximo establecido si el asociado lo solicita con un día de anticipación, aunque aún no tenga la autorización documentada de la Dirección.',
-    ans:false, exp:'El procedimiento es explícito: el cajero no podrá realizar el retiro sin contar con la autorización documentada de la Dirección.', src:'Operaciones especiales › Retiros superiores al máximo' },
+    opts:['El retiro supera el límite: requiere solicitud con mínimo un día hábil de anticipación, autorización de la Dirección Financiera y de Tesorería, y validación de identidad con sus soportes','Pagarlo si hay efectivo suficiente en caja','Pagarlo en dos retiros de $7.500.000 el mismo día','Pagarlo y reportarlo a Tesorería al cierre'],
+    exp:'Para retiros superiores a $10\'000.000 se aplican: solicitud anticipada (mínimo un día hábil), autorización previa y documentada de la Dirección Financiera y de Tesorería, y validación de identidad con los soportes correspondientes.', src:'Operaciones especiales › Retiros superiores al máximo' },
+  { m:'m2', type:'mc', kind:'Pregunta', q:'Para un retiro superior al máximo, ¿con qué se valida la identidad del asociado y qué formatos debe diligenciar?',
+    opts:['Certihuella o Evidente; Declaración de Responsabilidad por Retiro en Efectivo y Declaración de Origen de Fondos','Solo la cédula y el comprobante de caja','Certihuella o Evidente; únicamente una carta firmada por el asociado','El formato de transferencia documental'],
+    exp:'Se verifica la identidad con Certihuella o Evidente; se adjunta la Declaración de Responsabilidad por Retiro en Efectivo y el asociado diligencia la Declaración de Origen de Fondos, que se radica ante el área de Riesgos.', src:'Operaciones especiales › Retiros superiores al máximo' },
+  { m:'m2', type:'mc', kind:'Pregunta', q:'¿Ante qué área se radica la Declaración de Origen de Fondos de un retiro superior al máximo?',
+    opts:['Ante el área de Riesgos','Ante Gestión Documental','Ante el área de Operaciones','Ante la transportadora de valores'],
+    exp:'El asociado diligencia el formato de Declaración de Origen de Fondos, el cual debe ser radicado ante el área de Riesgos.', src:'Operaciones especiales › Retiros superiores al máximo' },
+  { m:'m2', type:'tf', kind:'Pregunta', q:'El cajero puede realizar un retiro superior al máximo establecido si el asociado lo solicita con un día de anticipación, aunque aún no tenga la autorización documentada de la Dirección Financiera y de Tesorería.',
+    ans:false, exp:'El procedimiento es explícito: el cajero no podrá efectuar el retiro hasta disponer de la autorización documentada de la Dirección Financiera y de Tesorería.', src:'Operaciones especiales › Retiros superiores al máximo' },
 
   { m:'m2', type:'mc', kind:'Pregunta', q:'¿Con qué operación se registra en taquilla un cheque recibido en caja?',
     opts:['0207 Cajero – Banco','La operación de reverso de transacción','La operación de recibo de caja en efectivo','La solicitud de recolección de excedentes a Tesorería'],
@@ -1230,11 +1239,14 @@ const BANK = [
     opts:['Gerente, director del Servicio al Asociado, Tesorero y jefe de Control Interno y Calidad','Solo al Tesorero','Solo al jefe inmediato','Al área de Gestión Documental'],
     exp:'El procedimiento enumera a esos cuatro cargos; además, desde tesorería se deja la trazabilidad del incidente.', src:'Alertas de caja › Faltantes o sobrantes' },
   { m:'m3', type:'mc', kind:'Simulación', q:'Al hacer el arqueo detectas un faltante de $25.000 en tu caja. ¿Cuál es la actuación correcta?',
-    opts:['Informar inmediatamente, cubrir de inmediato el faltante y dejar constancia de la situación','Cubrirlo con dinero propio y no informar, porque es un monto bajo','Esperar al día siguiente por si aparece','Registrar la diferencia como sobrante del día siguiente'],
-    exp:'Se debe informar inmediatamente (para verificar cámaras), el responsable cubre de inmediato el faltante y siempre se deja constancia.', src:'Alertas de caja › Faltantes o sobrantes' },
-  { m:'m3', type:'mc', kind:'Caso práctico', q:'Al cierre tienes un sobrante. ¿Qué se debe hacer con ese dinero?',
-    opts:['Consignar el sobrante previa notificación a tesorería y dejar constancia','Guardarlo en la caja para compensar futuros faltantes','Entregarlo al primer asociado que reclame','Repartirlo entre los cajeros de la oficina'],
-    exp:'El funcionario responsable debe consignar el sobrante previa notificación a tesorería; siempre se deja constancia de la situación.', src:'Alertas de caja › Faltantes o sobrantes' },
+    opts:['Informar inmediatamente y registrar la diferencia con la transacción 0147 – Faltante de caja; tras la investigación se define cómo se reconoce y cubre','Cubrirlo con dinero propio y no informar, porque es un monto bajo','Esperar al día siguiente por si aparece','Registrarlo con la transacción 0146 – Sobrante de caja'],
+    exp:'Se informa de inmediato (verificación de cámaras), el faltante se registra con la transacción 0147 – Faltante de caja y, terminada la investigación, se define el mecanismo para su reconocimiento y cubrimiento. Además, al superar $10.000 se considera grave.', src:'Alertas de caja › Faltantes o sobrantes' },
+  { m:'m3', type:'mc', kind:'Caso práctico', q:'Al cierre tienes un sobrante. ¿Qué se debe hacer?',
+    opts:['Informarlo y registrarlo con la transacción 0146 – Sobrante de caja; el valor hace parte del conteo y cuadre del cierre','Guardarlo en la caja para compensar futuros faltantes','Entregarlo al primer asociado que reclame','Registrarlo con la transacción 0147 – Faltante de caja'],
+    exp:'El sobrante se registra con la transacción 0146 – Sobrante de caja; queda incorporado en los registros y hace parte del conteo y cuadre del cierre de caja.', src:'Alertas de caja › Faltantes o sobrantes' },
+  { m:'m3', type:'mc', kind:'Pregunta', q:'¿A partir de qué monto se considera grave un sobrante o faltante?',
+    opts:['Cualquiera que supere los $10.000','Cualquiera que supere los $100.000','Solo los que superen $10.000.000','Solo los que igualen un salario mínimo'],
+    exp:'Se considera grave cualquier sobrante o faltante que supere los $10.000.', src:'Alertas de caja › Faltantes o sobrantes' },
   { m:'m3', type:'mc', kind:'Caso práctico', q:'El escáner de la oficina no permite digitalizar los documentos del cierre. ¿Qué debes hacer?',
     opts:['Informarlo oportunamente a Tesorería, ya que es una falla de equipos que afecta el funcionamiento de la caja','Esperar a que se arregle solo','Enviar los documentos sin digitalizar y sin avisar','Reportarlo únicamente cuando termine el mes'],
     exp:'Escáneres que no permiten digitalizar documentos aparecen en la categoría “Equipos y hardware”: toda falla que afecte las cajas debe informarse oportunamente a Tesorería.', src:'Alertas de caja › Reportar a tiempo' },
@@ -1357,7 +1369,6 @@ function renderChrome(active){
   html += `<div class="side-divider"></div>` + link('reto', 'Reto final', retoSub, ICON.trophy, 'var(--g-final)', !allDone(), STATE.finished ? 'ok' : allDone() ? '' : 'lock', '#/reto');
   html += `<div class="side-legend">
       <p><span class="dot" style="background:#9b6ad8"></span><span><b>Complementaria</b>: sugerencia de buena práctica, no es lineamiento institucional.</span></p>
-      <p><span class="dot" style="background:#f0a500"></span><span><b>Nota</b>: aclaración sobre el documento fuente.</span></p>
     </div>
     <div class="side-credit">${ICON.pen}<span>${CREDIT}</span></div>`;
   const sb = document.getElementById('sidebar');
