@@ -1817,7 +1817,7 @@ function downloadCertificate(){
     <div class="box"><small>Meta de la plataforma (${CONFIG.passPercent}%)</small><b>${pass ? 'Alcanzada' : 'No alcanzada'}</b></div>
   </div>
   <table><tr><th>Módulo</th><th style="text-align:center">Correctas</th></tr>${rows}</table>
-  <div class="meta">Registro en la plataforma: ${fmtDate(U.registeredAt)}<br>Reto presentado: ${fmtDate(F.startedAt)} – ${fmtDate(F.finishedAt)}<br>Estado del envío a Tesorería: ${F.sent === 'ok' ? 'enviado ' + fmtDate(F.sentAt) : 'pendiente'}</div>
+  <div class="meta">Registro en la plataforma: ${fmtDate(U.registeredAt)}<br>Reto presentado: ${fmtDate(F.finishedAt)}<br>Estado del envío a Tesorería: ${F.sent === 'ok' ? 'enviado ' + fmtDate(F.sentAt) : 'pendiente'}</div>
   <footer>Elaborado por <b>${CONFIG.autora}</b> · ${CONFIG.cargoAutora}</footer>
   <button class="print" onclick="window.print()">Imprimir o guardar como PDF</button>
 </div></div></body></html>`;
@@ -1839,14 +1839,13 @@ function downloadCertificate(){
 let sending = false;
 function buildPayload(){
   const F = STATE.finished, U = STATE.user;
-  const durMin = Math.max(1, Math.round((new Date(F.finishedAt) - new Date(F.startedAt)) / 60000));
   return {
     id: F.id, nombre: U.nombre, correo: U.correo,
     puntaje: F.pct + '%', correctas: `${F.okN} de ${F.total}`,
     meta: CONFIG.passPercent + '%', alcanzaMeta: F.pct >= CONFIG.passPercent ? 'Sí' : 'No',
     registro: fmtDate(U.registeredAt),
     modulos: MODULES.map((m, i) => `${i + 1}. ${m.title}: revisado ${fmtDate(STATE.doneAt[m.id])}`).join('\n'),
-    inicioReto: fmtDate(F.startedAt), finReto: fmtDate(F.finishedAt), duracion: durMin + ' min',
+    inicioReto: '', finReto: fmtDate(F.finishedAt), duracion: '',   // no se informa el tiempo empleado
     porModulo: F.perModule.map(p => `${p.title}: ${p.ok}/${p.total}`).join('\n'),
     respuestas: F.results.map((r, n) => `${n + 1}. [${MODULES[modIndex(r.m)].title} · ${r.kind}] ${r.ok ? '✔ CORRECTA' : '✘ INCORRECTA'}\n   Pregunta: ${r.q}\n   Respondió: ${r.resp}${r.ok ? '' : `\n   Correcta: ${r.corr}`}`).join('\n\n'),
     navegador: navigator.userAgent,
@@ -1860,8 +1859,8 @@ function buildHtmlSummary(d){
 <h2 style="color:#00826f;margin:0 0 6px">Caja bajo Control · Resultado del reto final</h2>
 <table style="border-collapse:collapse;border:1px solid #d6dee6" border="1" cellspacing="0">`
     + row('Nombre completo', d.nombre, true) + row('Correo', d.correo) + row('Puntaje', d.puntaje, true) + row('Respuestas correctas', d.correctas)
-    + row('Alcanza la meta (' + d.meta + ')', d.alcanzaMeta) + row('Registro en la plataforma', d.registro) + row('Inicio del reto', d.inicioReto)
-    + row('Fin del reto', d.finReto) + row('Duración', d.duracion) + row('Resultado por módulo', d.porModulo) + row('Módulos revisados', d.modulos)
+    + row('Alcanza la meta (' + d.meta + ')', d.alcanzaMeta) + row('Registro en la plataforma', d.registro) 
+    + row('Fecha de presentación del reto', d.finReto) + row('Resultado por módulo', d.porModulo) + row('Módulos revisados', d.modulos)
     + row('Detalle de respuestas', d.respuestas) + row('ID del intento', d.id)
     + `</table><p style="color:#7b8794;font-size:11px">Plataforma Caja bajo Control – FEBOR · Elaborado por ${CONFIG.autora}, ${CONFIG.cargoAutora}</p></div>`;
 }
@@ -1876,7 +1875,11 @@ async function sendResults(){
     if (cfg.metodo === 'powerautomate') {
       /* Power Automate: JSON directo al disparador HTTP. Responde 200/202 si se recibió. */
       const r = await fetch(cfg.url, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(d) });
-      if (!r.ok) throw new Error('Power Automate respondió HTTP ' + r.status);
+      if (!r.ok) {
+        let detalle = '';
+        try { const txt = await r.text(); try { const j = JSON.parse(txt); detalle = (j.error && (j.error.code + ': ' + j.error.message)) || txt; } catch (e) { detalle = txt; } } catch (e) {}
+        throw new Error('Power Automate respondió HTTP ' + r.status + (detalle ? ' · ' + detalle.slice(0, 220) : ''));
+      }
     } else if (cfg.metodo === 'appsscript') {
       const opts = { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body:JSON.stringify(d) };
       try { const r = await fetch(cfg.url, opts); if (!r.ok) throw new Error('http'); }
@@ -1887,7 +1890,7 @@ async function sendResults(){
         name: d.nombre, email: d.correo,
         'Nombre completo': d.nombre, 'Correo del funcionario': d.correo, 'Puntaje': d.puntaje, 'Respuestas correctas': d.correctas,
         'Meta de la plataforma': d.meta, 'Alcanza la meta': d.alcanzaMeta, 'Registro en la plataforma': d.registro,
-        'Módulos revisados': d.modulos, 'Inicio del reto': d.inicioReto, 'Fin del reto': d.finReto, 'Duración del reto': d.duracion,
+        'Módulos revisados': d.modulos, 'Fecha de presentación del reto': d.finReto,
         'Resultado por módulo': d.porModulo, 'Detalle de respuestas': d.respuestas, 'ID del intento': d.id, 'Navegador': d.navegador,
       };
       const r = await fetch('https://formsubmit.co/ajax/' + cfg.destino, { method:'POST', headers:{ 'Content-Type':'application/json', 'Accept':'application/json' }, body:JSON.stringify(fields) });
